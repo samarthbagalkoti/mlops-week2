@@ -1,0 +1,24 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    app: nginx
+  # Optional (choose based on your setup):
+  # If using the legacy in-tree AWS cloud provider and you want NLB:
+  # annotations:
+  #   service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+
+  # If you're using the AWS Load Balancer Controller AND want to be explicit:
+  # annotations:
+  #   service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
+  #   service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx
+  ports:
+    - name: http
+      port: 80        # public port on the AWS LB
+      targetPort: 80  # pod port
+
