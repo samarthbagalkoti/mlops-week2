@@ -6,28 +6,44 @@ on:
   pull_request:
 
 permissions:
-  id-token: write   # required for GitHub OIDC → AWS
-  contents: read  
+  id-token: write
+  contents: read
 
 jobs:
   terraform:
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v2
-      with:
-        terraform_version: 1.12.2
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::014498620948:role/GitHub-Connector-Role
+          aws-region: us-east-1
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Who am I? (debug)
+        run: aws sts get-caller-identity
 
-    - name: Terraform Plan
-      run: terraform plan -input=false
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2
 
-    - name: Terraform Apply
-      if: github.ref == 'refs/heads/main'
-      run: terraform apply -auto-approve
+      - name: Terraform Init (S3 backend)
+        run: |
+          terraform init -reconfigure \
+            -backend-config="bucket=mlops-terraform-state-week2" \
+            -backend-config="key=eks/terraform.tfstate" \
+            -backend-config="region=us-east-1" \
+            -backend-config="dynamodb_table=mlops-terraform-locks"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -no-color
+
+      - name: Terraform Apply (main only)
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -no-color
