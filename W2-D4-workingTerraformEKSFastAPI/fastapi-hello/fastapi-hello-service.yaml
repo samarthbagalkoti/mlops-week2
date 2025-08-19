@@ -3,7 +3,7 @@ kind: Service
 metadata:
   name: fastapi-hello
 spec:
-  type: LoadBalancer
+  type: ClusterIP
   selector:
     app: fastapi-hello
   ports:

@@ -29,4 +29,13 @@ locals {
     var.extra_tags
   )
 }
+terraform {
+  backend "s3" {
+    bucket         = "mlops-terraform-state-week2"
+    key            = "eks/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "mlops-terraform-locks"
+    encrypt        = true
+  }
+}
 
