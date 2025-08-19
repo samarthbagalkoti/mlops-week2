@@ -1,14 +1,41 @@
 terraform {
-  required_version = ">= 1.12.2"
+  # Terraform Core: pick a sane floor; update if your org pins higher
+  required_version = ">= 1.6.0"
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "6.9.0"
+      version = "~> 6.9" # keep minor-compatible upgrades
     }
   }
 }
 
 provider "aws" {
-  region = "us-east-1"
+  region = var.region
+  default_tags {
+    tags = local.common_tags
+  }
+}
+
+locals {
+  # Global tags applied everywhere (merged with resource-specific tags if needed)
+  common_tags = merge(
+    {
+      Project     = "mlops"
+      Environment = var.environment
+      ManagedBy   = "terraform"
+      Owner       = var.owner
+    },
+    var.extra_tags
+  )
+}
+terraform {
+  backend "s3" {
+    bucket         = "mlops-terraform-state-week2"
+    key            = "eks/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "mlops-terraform-locks"
+    encrypt        = true
+  }
 }
 
